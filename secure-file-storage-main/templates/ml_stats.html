@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ML Statistics & Analysis</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #667eea;
+        }
+        h1 { color: #333; margin-bottom: 10px; }
+        
+        .stats-overview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        .stat-card {
+            padding: 30px;
+            border-radius: 15px;
+            color: white;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .stat-card.total { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .stat-card.low { background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%); }
+        .stat-card.medium { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
+        .stat-card.high { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .stat-card .icon { font-size: 3em; margin-bottom: 10px; }
+        .stat-card .value { font-size: 3em; font-weight: bold; margin: 10px 0; }
+        .stat-card .label { font-size: 1.1em; opacity: 0.9; }
+        
+        .chart-section {
+            background: #f8f9ff;
+            padding: 30px;
+            border-radius: 15px;
+            margin: 30px 0;
+        }
+        .chart-section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .bar-chart {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-around;
+            height: 300px;
+            margin: 30px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+        }
+        .bar {
+            width: 100px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+        }
+        .bar-fill {
+            width: 100%;
+            border-radius: 10px 10px 0 0;
+            transition: height 1s ease-out;
+            position: relative;
+        }
+        .bar-fill.low { background: linear-gradient(to top, #84fab0 0%, #8fd3f4 100%); }
+        .bar-fill.medium { background: linear-gradient(to top, #fa709a 0%, #fee140 100%); }
+        .bar-fill.high { background: linear-gradient(to top, #f093fb 0%, #f5576c 100%); }
+        .bar-value {
+            position: absolute;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-weight: bold;
+            color: #333;
+            font-size: 1.2em;
+        }
+        .bar-label {
+            margin-top: 10px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .confidence-section {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin: 30px 0;
+            border: 2px solid #667eea;
+        }
+        .confidence-meter {
+            width: 100%;
+            height: 40px;
+            background: #e0e0e0;
+            border-radius: 20px;
+            overflow: hidden;
+            margin: 20px 0;
+            position: relative;
+        }
+        .confidence-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            transition: width 1s ease-out;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 15px;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .files-table {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin: 30px 0;
+        }
+        .files-table h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: bold;
+        }
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        tr:hover {
+            background: #f8f9ff;
+        }
+        .mini-badge {
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.85em;
+            font-weight: bold;
+            color: white;
+            display: inline-block;
+        }
+        .mini-badge.low { background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%); }
+        .mini-badge.medium { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
+        .mini-badge.high { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        
+        .back-btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 40px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s;
+            margin-top: 20px;
+        }
+        .back-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 ML Statistics & Analysis Dashboard</h1>
+            <p style="color: #666; margin-top: 10px;">Real-time insights into your adaptive encryption system</p>
+        </div>
+
+        <div class="stats-overview">
+            <div class="stat-card total">
+                <div class="icon">📁</div>
+                <div class="value">{{ stats.total }}</div>
+                <div class="label">Total Files</div>
+            </div>
+            <div class="stat-card low">
+                <div class="icon">⚡</div>
+                <div class="value">{{ stats.low }}</div>
+                <div class="label">Low Sensitivity</div>
+                <div style="font-size: 0.9em; margin-top: 5px;">
+                    {{ "%.1f"|format((stats.low / stats.total * 100) if stats.total > 0 else 0) }}%
+                </div>
+            </div>
+            <div class="stat-card medium">
+                <div class="icon">⚖️</div>
+                <div class="value">{{ stats.medium }}</div>
+                <div class="label">Medium Sensitivity</div>
+                <div style="font-size: 0.9em; margin-top: 5px;">
+                    {{ "%.1f"|format((stats.medium / stats.total * 100) if stats.total > 0 else 0) }}%
+                </div>
+            </div>
+            <div class="stat-card high">
+                <div class="icon">🛡️</div>
+                <div class="value">{{ stats.high }}</div>
+                <div class="label">High Sensitivity</div>
+                <div style="font-size: 0.9em; margin-top: 5px;">
+                    {{ "%.1f"|format((stats.high / stats.total * 100) if stats.total > 0 else 0) }}%
+                </div>
+            </div>
+        </div>
+
+        <div class="chart-section">
+            <h2>📈 Sensitivity Distribution</h2>
+            <div class="bar-chart">
+                <div class="bar">
+                    <div class="bar-fill low" style="height: {{ (stats.low / stats.total * 250) if stats.total > 0 else 0 }}px;">
+                        <div class="bar-value">{{ stats.low }}</div>
+                    </div>
+                    <div class="bar-label">LOW</div>
+                </div>
+                <div class="bar">
+                    <div class="bar-fill medium" style="height: {{ (stats.medium / stats.total * 250) if stats.total > 0 else 0 }}px;">
+                        <div class="bar-value">{{ stats.medium }}</div>
+                    </div>
+                    <div class="bar-label">MEDIUM</div>
+                </div>
+                <div class="bar">
+                    <div class="bar-fill high" style="height: {{ (stats.high / stats.total * 250) if stats.total > 0 else 0 }}px;">
+                        <div class="bar-value">{{ stats.high }}</div>
+                    </div>
+                    <div class="bar-label">HIGH</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="confidence-section">
+            <h2 style="color: #333; margin-bottom: 10px;">🎯 Average ML Confidence Score</h2>
+            <p style="color: #666; margin-bottom: 20px;">
+                Measures how confident the ML model is in its classifications
+            </p>
+            <div class="confidence-meter">
+                <div class="confidence-fill" style="width: {{ stats.avg_confidence * 100 }}%;">
+                    {{ "%.1f"|format(stats.avg_confidence * 100) }}%
+                </div>
+            </div>
+            <p style="text-align: center; color: #666; margin-top: 10px;">
+                {% if stats.avg_confidence > 0.9 %}
+                    ✅ Excellent - Model is very confident in classifications
+                {% elif stats.avg_confidence > 0.75 %}
+                    ✅ Good - Model is confident in most classifications
+                {% elif stats.avg_confidence > 0.6 %}
+                    ⚠️ Fair - Model needs more training data
+                {% else %}
+                    ⚠️ Low - Consider retraining the model
+                {% endif %}
+            </p>
+        </div>
+
+        <div class="files-table">
+            <h2>📋 Detailed File Analysis</h2>
+            {% if files %}
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Filename</th>
+                            <th>Sensitivity</th>
+                            <th>Confidence</th>
+                            <th>Size</th>
+                            <th>Entropy</th>
+                            <th>Encryption</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for file_id, file_info in files.items() %}
+                        <tr>
+                            <td>
+                                <strong>{{ file_info.original_filename }}</strong><br>
+                                <small style="color: #999;">{{ file_id }}</small>
+                            </td>
+                            <td>
+                                <span class="mini-badge {{ file_info.sensitivity|lower }}">
+                                    {{ file_info.sensitivity }}
+                                </span>
+                            </td>
+                            <td>
+                                <strong>{{ "%.1f"|format(file_info.ml_confidence * 100) }}%</strong>
+                                <br>
+                                <div style="width: 60px; height: 6px; background: #e0e0e0; border-radius: 3px; margin-top: 5px;">
+                                    <div style="width: {{ file_info.ml_confidence * 100 }}%; height: 100%; background: #667eea; border-radius: 3px;"></div>
+                                </div>
+                            </td>
+                            <td>{{ "%.1f"|format(file_info.file_size / 1024) }} KB</td>
+                            <td>{{ "%.2f"|format(file_info.entropy) }}</td>
+                            <td><small>{{ file_info.crypto_config }}</small></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p style="text-align: center; color: #999; padding: 40px;">
+                No files uploaded yet. Upload some files to see ML analysis!
+            </p>
+            {% endif %}
+        </div>
+
+        <div class="chart-section">
+            <h2>🤖 ML Model Information</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-top: 20px;">
+                <div style="background: white; padding: 20px; border-radius: 10px; text-align: center;">
+                    <div style="font-size: 2.5em; margin-bottom: 10px;">🌲</div>
+                    <h4>Algorithm</h4>
+                    <p style="color: #666; margin-top: 5px;">Random Forest Classifier</p>
+                </div>
+                <div style="background: white; padding: 20px; border-radius: 10px; text-align: center;">
+                    <div style="font-size: 2.5em; margin-bottom: 10px;">📊</div>
+                    <h4>Features</h4>
+                    <p style="color: #666; margin-top: 5px;">6 features analyzed per file</p>
+                </div>
+                <div style="background: white; padding: 20px; border-radius: 10px; text-align: center;">
+                    <div style="font-size: 2.5em; margin-bottom: 10px;">🎯</div>
+                    <h4>Classes</h4>
+                    <p style="color: #666; margin-top: 5px;">LOW, MEDIUM, HIGH</p>
+                </div>
+                <div style="background: white; padding: 20px; border-radius: 10px; text-align: center;">
+                    <div style="font-size: 2.5em; margin-bottom: 10px;">⚡</div>
+                    <h4>Speed</h4>
+                    <p style="color: #666; margin-top: 5px;">&lt;5ms classification time</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="confidence-section">
+            <h2 style="color: #333; margin-bottom: 15px;">💡 Key Insights</h2>
+            <ul style="line-height: 2; color: #666;">
+                {% if stats.total > 0 %}
+                <li>
+                    <strong>Most Common Classification:</strong> 
+                    {% if stats.low >= stats.medium and stats.low >= stats.high %}LOW ({{ stats.low }} files)
+                    {% elif stats.medium >= stats.high %}MEDIUM ({{ stats.medium }} files)
+                    {% else %}HIGH ({{ stats.high }} files){% endif %}
+                </li>
+                <li>
+                    <strong>Performance Optimization:</strong> 
+                    {{ "%.1f"|format((stats.low / stats.total * 100) if stats.total > 0 else 0) }}% of files use fast encryption
+                </li>
+                <li>
+                    <strong>Security Level:</strong>
+                    {{ "%.1f"|format((stats.high / stats.total * 100) if stats.total > 0 else 0) }}% of files use maximum security
+                </li>
+                <li>
+                    <strong>Model Reliability:</strong>
+                    {% if stats.avg_confidence > 0.85 %}Highly reliable classifications
+                    {% elif stats.avg_confidence > 0.7 %}Reliable classifications
+                    {% else %}Consider collecting more training data{% endif %}
+                </li>
+                {% else %}
+                <li>No data available yet. Upload files to see insights!</li>
+                {% endif %}
+            </ul>
+        </div>
+
+        <div style="text-align: center;">
+            <a href="/" class="back-btn">← Back to File Storage</a>
+        </div>
+    </div>
+</body>
+</html>

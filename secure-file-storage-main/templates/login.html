@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Secure File Storage</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            max-width: 450px;
+            width: 100%;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+        .header p {
+            color: #666;
+            font-size: 0.95em;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        .form-options {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+        }
+        .form-options label {
+            display: flex;
+            align-items: center;
+            color: #666;
+            cursor: pointer;
+        }
+        .form-options input[type="checkbox"] {
+            margin-right: 5px;
+        }
+        .form-options a {
+            color: #667eea;
+            text-decoration: none;
+        }
+        .form-options a:hover {
+            text-decoration: underline;
+        }
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        .divider {
+            text-align: center;
+            margin: 25px 0;
+            color: #999;
+            position: relative;
+        }
+        .divider::before,
+        .divider::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 40%;
+            height: 1px;
+            background: #e0e0e0;
+        }
+        .divider::before { left: 0; }
+        .divider::after { right: 0; }
+        .register-link {
+            text-align: center;
+            margin-top: 20px;
+            color: #666;
+        }
+        .register-link a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .register-link a:hover {
+            text-decoration: underline;
+        }
+        .flash-messages {
+            margin-bottom: 20px;
+        }
+        .flash-message {
+            padding: 12px 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            animation: slideIn 0.3s ease-out;
+        }
+        .flash-message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .flash-message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .flash-message.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .feature-icons {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 1px solid #e0e0e0;
+        }
+        .feature-icon {
+            text-align: center;
+            color: #666;
+            font-size: 0.85em;
+        }
+        .feature-icon div {
+            font-size: 2em;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔐 Welcome Back</h1>
+            <p>ML-Adaptive Secure File Storage</p>
+        </div>
+
+        <div class="flash-messages">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="flash-message {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+
+        <form method="POST" action="{{ url_for('auth.login') }}">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" required autofocus>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+
+            <div class="form-options">
+                <label>
+                    <input type="checkbox" name="remember" value="1">
+                    Remember me
+                </label>
+                <a href="{{ url_for('auth.profile') }}">Forgot password?</a>
+            </div>
+
+            <button type="submit" class="btn">🔓 Log In</button>
+        </form>
+
+        <div class="divider">OR</div>
+
+        <div class="register-link">
+            Don't have an account? <a href="{{ url_for('auth.register') }}">Sign up now</a>
+        </div>
+
+        <div class="feature-icons">
+            <div class="feature-icon">
+                <div>🧠</div>
+                <div>ML-Powered</div>
+            </div>
+            <div class="feature-icon">
+                <div>🔐</div>
+                <div>Zero-Knowledge</div>
+            </div>
+            <div class="feature-icon">
+                <div>⚡</div>
+                <div>Adaptive Crypto</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

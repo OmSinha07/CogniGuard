@@ -1,0 +1,7 @@
+from datasets import load_dataset
+
+# Login using e.g. `huggingface-cli login` first in your terminal if needed
+ds = load_dataset("BEE-spoke-data/govdocs1-pdf-source", "index")
+
+print("Dataset downloaded and loaded:")
+print(ds)

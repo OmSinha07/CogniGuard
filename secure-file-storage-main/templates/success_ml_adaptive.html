@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Encryption Success</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; text-align: center; background: #f8f9fa; }
+        .success-box { background: #d4edda; color: #155724; border: 2px solid #c3e6cb; padding: 25px; border-radius: 15px; margin: 20px 0; }
+        .btn { background: #007bff; color: white; padding: 12px 25px; border: none; border-radius: 5px; cursor: pointer; text-decoration: none; display: inline-block; margin: 10px; }
+        .btn:hover { background: #0056b3; }
+        .btn-success { background: #28a745; }
+        .encryption-details { background: white; padding: 20px; border-radius: 10px; margin: 20px 0; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .detail-item { margin: 10px 0; padding: 8px; background: #f8f9fa; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <div class="success-box">
+        <h2>🔒 File Encrypted Successfully!</h2>
+        <p style="font-size: 18px;">Your file <strong>"{{ filename }}"</strong> has been encrypted and stored securely.</p>
+    </div>
+    
+    <div class="encryption-details">
+        <h3>🔐 Encryption Details</h3>
+        <div class="detail-item"><strong>🆔 File ID:</strong> {{ file_id }}</div>
+        <div class="detail-item"><strong>🔐 Encryption:</strong> AES-256-CBC + RSA-2048</div>
+        <div class="detail-item"><strong>🔑 Key Protection:</strong> Your RSA public key</div>
+        <div class="detail-item"><strong>🛡️ Security:</strong> Zero-knowledge storage</div>
+    </div>
+    
+    <div>
+        <a href="/" class="btn">← Back to Files</a>
+        <a href="/download/{{ file_id }}" class="btn btn-success">🔓 Test Download</a>
+    </div>
+    
+    <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin: 20px 0; color: #856404;">
+        <strong>💡 What Happened:</strong><br>
+        1. Your file was encrypted with a random AES-256 key<br>
+        2. The AES key was encrypted with your RSA public key<br>
+        3. Both are stored separately - maximum security!
+    </div>
+</body>
+</html>

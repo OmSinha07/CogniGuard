@@ -1,0 +1,62 @@
+{
+  "default_user_0": {
+    "filename": "enc_low_default_user_0.dat",
+    "original_filename": "test_folder.txt",
+    "encrypted_aes_key": "jY3u4I4C6imt8gfNrSAK0ttII2e59cggcXrpAX2HELLmB4rcEHFuA7GcwN4g9U0dnITzfyAyL0B2KIeAnC/ThA2JkHCENyV0gzBWrrtPq4TwdjR6H7kTQ5ClVuHImWwGO8ZYukuHgFsdwohkQ1TGMA/zhoGXlGQQrIMpsKhCfJo=",
+    "file_size": 94,
+    "user_id": "default_user",
+    "uploaded_at": "2025-10-04T21:12:07.206946",
+    "sensitivity": "LOW",
+    "ml_confidence": 1.0,
+    "entropy": 4.16564007725408,
+    "crypto_config": "AES-128 + RSA-1024"
+  },
+  "default_user_1": {
+    "filename": "enc_low_default_user_1.dat",
+    "original_filename": "test_folder.txt",
+    "encrypted_aes_key": "Yk3g38zzkov2z7TBQDPL1dVaMlKHAe4eX9Wnprjo9J0W84UybKkQhjPWznJuqsWvQyygVy6J7tXEKrtg5hX3tObro+NaXIFEwEJT2rQ/anFdNxyt7lmTfPSDb6AMmT1/0NyOgol06G9wPwEXawdDtqAFyHnCVtB6UX96MTzTiOw=",
+    "file_size": 94,
+    "user_id": "default_user",
+    "uploaded_at": "2025-10-04T21:31:07.732383",
+    "sensitivity": "LOW",
+    "ml_confidence": 1.0,
+    "entropy": 4.16564007725408,
+    "crypto_config": "AES-128 + RSA-1024"
+  },
+  "default_user_2": {
+    "filename": "enc_low_default_user_2.dat",
+    "original_filename": "test_folder.txt",
+    "encrypted_aes_key": "n5YeDjLiTIH2BsqqpNjyqeVg3gU4Sc5fkBfSXFqOW1VZyMzZPfpN/l8AMmaISyHrZxZZxwyvDl7JjI5p/BHF3o593ST+dJgM42QMlQPFqLC34Zdd/AnZlYgu9U3tMB0SPITN4PGRAleNoyqMvWB/labGLwf0tGlgPxeHD81PYas=",
+    "file_size": 94,
+    "user_id": "default_user",
+    "uploaded_at": "2025-10-04T21:31:17.827367",
+    "sensitivity": "LOW",
+    "ml_confidence": 1.0,
+    "entropy": 4.16564007725408,
+    "crypto_config": "AES-128 + RSA-1024"
+  },
+  "default_user_3": {
+    "filename": "enc_low_default_user_3.dat",
+    "original_filename": "test_folder.txt",
+    "encrypted_aes_key": "BpbFZNSf443BTqDemdgIfnUqzsPbq0Pit6vJH6nATKYvvyNgjG5M1EcB84LuVe8jsxhIs9FObcrVX1fWOtbDL2mldbRXPLKSerk6i+nhgWTt5NUEeL6sFOUVoFMNmIEFlvmQigtiCC0/2sq0QLiVNA/6ld/nqXyJKj5M2Nrs32E=",
+    "file_size": 94,
+    "user_id": "default_user",
+    "uploaded_at": "2025-10-04T21:32:15.368240",
+    "sensitivity": "LOW",
+    "ml_confidence": 1.0,
+    "entropy": 4.16564007725408,
+    "crypto_config": "AES-128 + RSA-1024"
+  },
+  "default_user_4": {
+    "filename": "enc_low_default_user_4.dat",
+    "original_filename": "test_folder_3.txt",
+    "encrypted_aes_key": "a5z3SNkSsUHevlnVdlQJtcFVp8ejNlv/YEs/67/EkyUOEeMQ+jAuvJf/FHHhGVfDWUtkHTM+2iE+FkU5g/ZLCUOFMNUT/ZLhNnRG8v5tDQuJ2kHlkLYuOSTUzl1ECNrAEfb86Tdqlp4T0V5tlKK5l5Gm9ftwoNjxWjAB29VeuSc=",
+    "file_size": 94,
+    "user_id": "default_user",
+    "uploaded_at": "2025-10-23T14:07:50.044584",
+    "sensitivity": "LOW",
+    "ml_confidence": 1.0,
+    "entropy": 4.16564007725408,
+    "crypto_config": "AES-128 + RSA-1024"
+  }
+}
