@@ -5,8 +5,9 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime
+from datetime import datetime, timedelta # Ensure timedelta is imported for reset/lock logic
 import secrets
+import pyotp # Added for TOTP functionality
 
 db = SQLAlchemy()
 
@@ -31,11 +32,33 @@ class User(UserMixin, db.Model):
     account_locked_until = db.Column(db.DateTime, nullable=True)
     password_reset_token = db.Column(db.String(100), unique=True, nullable=True)
     password_reset_expires = db.Column(db.DateTime, nullable=True)
+
+    # --- NEW FIELD FOR TOTP ---
+    otp_secret = db.Column(db.String(32), nullable=True) 
+    # --- END NEW FIELD ---
     
     # Relationships
     files = db.relationship('EncryptedFile', backref='owner', lazy='dynamic', cascade='all, delete-orphan')
     sessions = db.relationship('UserSession', backref='user', lazy='dynamic', cascade='all, delete-orphan')
     
+    # --- NEW TOTP METHODS ---
+    def get_totp_uri(self):
+        """Generate TOTP provisioning URI for QR codes"""
+        if not self.otp_secret:
+            return None
+        return pyotp.totp.TOTP(self.otp_secret).provisioning_uri(
+            name=self.username, 
+            issuer_name="CogniGuard"
+        )
+
+    def verify_totp(self, token):
+        """Verify the provided TOTP token"""
+        if not self.otp_secret:
+            return False
+        totp = pyotp.totp.TOTP(self.otp_secret)
+        return totp.verify(token)
+    # --- END NEW METHODS ---
+
     def set_password(self, password):
         """Hash and set user password"""
         self.password_hash = generate_password_hash(password, method='pbkdf2:sha256')
@@ -79,7 +102,7 @@ class User(UserMixin, db.Model):
     def __repr__(self):
         return f'<User {self.username}>'
 
-
+# Rest of EncryptedFile, UserSession, and AuditLog classes remain exactly the same...
 class EncryptedFile(db.Model):
     """File metadata with user ownership"""
     __tablename__ = 'encrypted_files'
