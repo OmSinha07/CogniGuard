@@ -9,6 +9,9 @@ from models import db, User, AuditLog
 from datetime import datetime, timedelta
 import re
 import pyotp 
+from datetime import datetime
+from flask import render_template, request, redirect, url_for, flash
+from models import db, User
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -229,6 +232,58 @@ def verify_2fa():
             log_audit('LOGIN_FAILED_2FA', user_id=user.id, details='Invalid OTP', success=False)
             
     return render_template('verify_2fa.html')
+
+@auth_bp.route('/forgot-password', methods=['GET', 'POST'])
+def forgot_password():
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip().lower()
+        user = User.query.filter_by(email=email).first()
+        
+        if user:
+            # Uses the model's generate_reset_token method
+            token = user.generate_reset_token()
+            # For demonstration, the link is flashed. In production, send via email.
+            reset_url = url_for('auth.reset_password', token=token, _external=True)
+            flash(f'Reset Link (Demo): {reset_url}', 'info')
+        else:
+            flash('If that email is registered, a reset link has been sent.', 'info')
+            
+    return render_template('forgot_password.html')
+
+@auth_bp.route('/reset-password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    user = User.query.filter_by(password_reset_token=token).first()
+    
+    # Check if token exists and hasn't expired
+    if not user or not user.password_reset_expires or user.password_reset_expires < datetime.utcnow():
+        flash('The reset link is invalid or has expired.', 'error')
+        return redirect(url_for('auth.forgot_password'))
+    
+    if request.method == 'POST':
+        password = request.form.get('password')
+        confirm = request.form.get('confirm_password')
+        
+        if password != confirm:
+            flash('Passwords do not match.', 'error')
+            return render_template('reset_password_form.html', token=token)
+            
+        # Use existing password validation function
+        is_valid, message = validate_password(password)
+        if not is_valid:
+            flash(message, 'error')
+            return render_template('reset_password_form.html', token=token)
+            
+        user.set_password(password)
+        user.password_reset_token = None
+        user.password_reset_expires = None
+        db.session.commit()
+        
+        # log_audit is already defined in your auth.py
+        log_audit('PASSWORD_RESET_SUCCESS', user_id=user.id)
+        flash('Your password has been reset successfully.', 'success')
+        return redirect(url_for('auth.login'))
+        
+    return render_template('reset_password_form.html', token=token)
 
 @auth_bp.route('/logout')
 @login_required
