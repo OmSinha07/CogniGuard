@@ -440,11 +440,19 @@
                         </div>
                         
                         <div class="file-actions">
-                            <a href="/download/{{ file_id }}" class="download-btn">🔓 Decrypt & Download</a>
-                            <form action="/delete/{{ file_id }}" method="POST" onsubmit="return confirm('Are you sure you want to delete \'{{ file_info.original_filename }}\'?');" style="margin: 0;">
-                                <button type="submit" class="delete-btn">🗑️ Delete</button>
-                            </form>
-                        </div>
+    <a href="/download/{{ file_id }}" class="download-btn">🔓 Decrypt & Download</a>
+    
+    <form action="{{ url_for('share_file', file_id=file_id|int) }}" method="POST" style="margin-top: 5px; width: 100%;">
+        <div style="display: flex; gap: 5px;">
+            <input type="text" name="identifier" placeholder="Share with User/Email" required 
+                   style="flex: 1; padding: 8px; border-radius: 20px; border: 1px solid #ddd; font-size: 0.8rem;">
+            <button type="submit" class="download-btn" style="padding: 8px 15px; background: #667eea;">Share</button>
+        </div>
+    </form>
+    <form action="/delete/{{ file_id }}" method="POST" onsubmit="return confirm('Are you sure you want to delete \'{{ file_info.original_filename }}\'?');" style="margin: 0; width: 100%;">
+        <button type="submit" class="delete-btn">🗑️ Delete</button>
+    </form>
+</div>
                         </div>
                 </div>
                 {% endfor %}
@@ -458,6 +466,39 @@
         </div>
 
         <div class="upload-section" style="margin-top: 40px;">
+            <div class="files-section" style="margin-top: 50px; border-top: 2px solid #f0f0f0; padding-top: 30px;">
+    <h2 style="margin-bottom: 20px; color: #333;">🤝 Files Shared with You</h2>
+    
+    {% if shared_files %}
+        {% for s_id, s_file in shared_files.items() %}
+        <div class="file-item" style="border-left: 5px solid #84fab0;">
+            <div class="file-header">
+                <div style="flex: 1; min-width: 300px;">
+                    <div class="file-name">🔓 {{ s_file.original_filename }}</div>
+                    <div class="file-meta">
+                        <div class="meta-item">
+                            <span class="sensitivity-badge badge-{{ s_file.sensitivity|lower }}">
+                                {{ s_file.sensitivity }}
+                            </span>
+                        </div>
+                        <div class="meta-item">👤 Shared By: <strong>{{ s_file.owner }}</strong></div>
+                        <div class="meta-item">📅 {{ s_file.uploaded_at[:10] }}</div>
+                    </div>
+                </div>
+                <div class="file-actions">
+                    <a href="/download/{{ s_id }}" class="download-btn" style="background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);">
+                        🔓 Download Shared File
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty-state" style="padding: 30px;">
+            <p>No files have been shared with you yet.</p>
+        </div>
+    {% endif %}
+</div>
             <h2 style="margin-bottom: 20px; color: #333;">🔬 How ML-Adaptive Encryption Works</h2>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
                 <div style="padding: 20px; background: white; border-radius: 10px;">

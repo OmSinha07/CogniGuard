@@ -1,5 +1,5 @@
 # ============================================
-# FILE 3: crypto_utils_adaptive.py (NEW)
+# FILE: crypto_utils_adaptive.py
 # ============================================
 
 from Crypto.PublicKey import RSA
@@ -83,16 +83,14 @@ class AdaptiveCryptoManager:
     def decrypt_file(self, encrypted_file_b64, encrypted_key_b64, private_key_str, sensitivity='MEDIUM'):
         """Decrypt file with matching algorithm"""
         try:
-            config = self.configs[sensitivity]
-            
             # Convert from base64
             encrypted_file_data = base64.b64decode(encrypted_file_b64)
-            encrypted_aes_key = base64.b64decode(encrypted_key_b64)
+            encrypted_key = base64.b64decode(encrypted_key_b64)
             
             # Decrypt AES key with RSA
             private_key = RSA.import_key(private_key_str)
             cipher_rsa = PKCS1_OAEP.new(private_key)
-            aes_key = cipher_rsa.decrypt(encrypted_aes_key)
+            aes_key = cipher_rsa.decrypt(encrypted_key)
             
             # Extract IV and encrypted data
             iv = encrypted_file_data[:16]
@@ -108,11 +106,24 @@ class AdaptiveCryptoManager:
         except Exception as e:
             raise Exception(f"Adaptive decryption failed: {str(e)}")
     
+    def decrypt_aes_key(self, encrypted_aes_key_b64, private_key_str):
+        """Decrypts the AES key for sharing (Unlock)"""
+        encrypted_aes_key = base64.b64decode(encrypted_aes_key_b64)
+        private_key = RSA.import_key(private_key_str)
+        cipher_rsa = PKCS1_OAEP.new(private_key)
+        raw_aes_key = cipher_rsa.decrypt(encrypted_aes_key)
+        return raw_aes_key
+
+    def encrypt_aes_key(self, raw_aes_key, public_key_str):
+        """Encrypts the AES key for the recipient (Relock)"""
+        public_key = RSA.import_key(public_key_str)
+        cipher_rsa = PKCS1_OAEP.new(public_key)
+        encrypted_aes_key = cipher_rsa.encrypt(raw_aes_key)
+        return base64.b64encode(encrypted_aes_key).decode('utf-8')
+
     def get_config(self, sensitivity):
         """Get encryption configuration for sensitivity level"""
         return self.configs.get(sensitivity, self.configs['MEDIUM'])
 
 # Global instance
 adaptive_crypto = AdaptiveCryptoManager()
-
-

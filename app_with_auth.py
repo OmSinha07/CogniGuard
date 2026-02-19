@@ -14,7 +14,7 @@ import csv # <<< ADDED
 from datetime import datetime # <<< ADDED
 
 # Import models and blueprints
-from models import db, User, EncryptedFile, AuditLog
+from models import db, User, EncryptedFile, AuditLog,SharedKey
 from auth import auth_bp
 
 # Import existing modules
@@ -101,12 +101,15 @@ def write_metrics_to_csv(csv_file, metrics_dict, fieldnames):
 @app.route('/')
 @login_required
 def index():
-    """Main page - file dashboard"""
-    # Get current user's files
+    """Main page - file dashboard with shared files"""
+    # Get files owned by the current user
     user_files = EncryptedFile.query.filter_by(user_id=current_user.id)\
         .order_by(EncryptedFile.uploaded_at.desc()).all()
     
-    # Convert to dictionary format for template
+    # Get files shared with the current user
+    shared_files = current_user.shared_files
+    
+    # Convert owned files to dictionary format for template
     files_dict = {}
     for file in user_files:
         files_dict[str(file.id)] = {
@@ -121,8 +124,21 @@ def index():
             'encrypted_aes_key': file.encrypted_aes_key
         }
     
+    # Convert shared files to dictionary format for template
+    shared_dict = {}
+    for s_file in shared_files:
+        shared_dict[str(s_file.id)] = {
+            'filename': s_file.filename,
+            'original_filename': s_file.original_filename,
+            'file_size': s_file.file_size,
+            'sensitivity': s_file.sensitivity,
+            'uploaded_at': s_file.uploaded_at.isoformat(),
+            'owner': s_file.owner.username # Show who shared it
+        }
+    
     return render_template('index_ml_adaptive.html', 
                          files=files_dict, 
+                         shared_files=shared_dict,
                          user_id=current_user.username)
 
 @app.route('/profile')
@@ -293,75 +309,116 @@ def upload_file():
         flash(f'❌ Error: {str(e)}', 'error')
         log_audit('FILE_UPLOAD', details=f'Error: {str(e)}', success=False)
         return redirect(url_for('index'))
+    
+@app.route('/share/<int:file_id>', methods=['POST'])
+@login_required
+def share_file(file_id):
+    file_info = db.session.get(EncryptedFile, file_id)
+    if not file_info or file_info.user_id != current_user.id:
+        flash('Access denied', 'error')
+        return redirect(url_for('index'))
+
+    target_identifier = request.form.get('identifier')
+    target_user = User.query.filter((User.username == target_identifier) | (User.email == target_identifier)).first()
+
+    if target_user:
+        owner_keys = key_storage.get_user_keys(current_user.username, file_info.sensitivity)
+        raw_key = adaptive_crypto.decrypt_aes_key(file_info.encrypted_aes_key, owner_keys['private_key'])
+        
+        target_keys = key_storage.get_user_keys(target_user.username, file_info.sensitivity)
+        new_enc_key = adaptive_crypto.encrypt_aes_key(raw_key, target_keys['public_key'])
+        
+        if target_user not in file_info.shared_with:
+            file_info.shared_with.append(target_user)
+            shared_key_entry = SharedKey(file_id=file_id, user_id=target_user.id, encrypted_key_for_user=new_enc_key)
+            db.session.add(shared_key_entry)
+            file_info.is_shared = True
+            db.session.commit()
+            log_audit('FILE_SHARE', details=f'Shared {file_info.original_filename} with {target_user.username}')
+            flash(f'Shared with {target_user.username}', 'success')
+    return redirect(url_for('index'))
 
 @app.route('/download/<int:file_id>')
 @login_required
 def download_file(file_id):
-    """Handle adaptive encrypted file download"""
+    """Handle adaptive encrypted file download (Updated for Sharing)"""
     try:
-        start_time = time.time() # <--- ADDED FOR LATENCY
+        start_time = time.time()
 
-        # --- ADDED FOR METRICS --- # <<< ADDED
+        # --- ADDED FOR METRICS ---
         process = psutil.Process(os.getpid())
         cpu_start = process.cpu_percent(interval=None)
         mem_start_info = process.memory_info()
         mem_start = mem_start_info.rss / (1024 * 1024)
-        # --- END METRICS ADDITION --- # <<< ADDED
+        # --- END METRICS ADDITION ---
         
-        # Get file metadata - Using the original get_or_404
-        file_info = EncryptedFile.query.get_or_404(file_id)
+        # Get file metadata
+        file_info = db.session.get(EncryptedFile, file_id) #
+        if not file_info:
+            abort(404)
         
-        # Check ownership
-        if file_info.user_id != current_user.id:
+        # --- UPDATED ACCESS CHECK FOR SHARING ---
+        # Check if current user is owner
+        is_owner = file_info.user_id == current_user.id #
+        
+        # Check if file is shared with current user
+        from models import SharedKey #
+        shared_record = SharedKey.query.filter_by(file_id=file_id, user_id=current_user.id).first() #
+        
+        if not (is_owner or shared_record): #
             flash('Access denied', 'error')
             log_audit('FILE_DOWNLOAD', 
                      details=f'Unauthorized access attempt: file_id={file_id}', 
-                     success=False)
+                     success=False) #
             return redirect(url_for('index'))
         
-        sensitivity = file_info.sensitivity
+        # --- KEY SELECTION ---
+        # If owner, use original key. If shared user, use their specific re-encrypted key.
+        enc_aes_key = file_info.encrypted_aes_key if is_owner else shared_record.encrypted_key_for_user #
+        
+        sensitivity = file_info.sensitivity #
         
         # Get user's private key
-        user_keys = key_storage.get_user_keys(current_user.username, sensitivity)
-        private_key = user_keys['private_key']
+        user_keys = key_storage.get_user_keys(current_user.username, sensitivity) #
+        private_key = user_keys['private_key'] #
         
         # Read encrypted file
-        encrypted_filepath = os.path.join(UPLOAD_FOLDER, file_info.filename)
+        encrypted_filepath = os.path.join(UPLOAD_FOLDER, file_info.filename) #
         with open(encrypted_filepath, 'r') as f:
-            encrypted_file_data = f.read()
+            encrypted_file_data = f.read() #
         
-        # Adaptive decryption
+        # Adaptive decryption using the selected key
         decrypted_data = adaptive_crypto.decrypt_file(
             encrypted_file_data,
-            file_info.encrypted_aes_key,
+            enc_aes_key,
             private_key,
             sensitivity
-        )
+        ) #
         
-        decryption_time = (time.time() - start_time) * 1000 # <--- ADDED FOR LATENCY
+        decryption_time = (time.time() - start_time) * 1000
 
-        # --- ADDED FOR METRICS --- # <<< ADDED
+        # --- ADDED FOR METRICS ---
         cpu_end = process.cpu_percent(interval=None)
         mem_end_info = process.memory_info()
         mem_end = mem_end_info.rss / (1024 * 1024)
         cpu_usage = cpu_end - cpu_start
-        # --- END METRICS ADDITION --- # <<< ADDED
+        # --- END METRICS ADDITION ---
         
         # Update last accessed
-        file_info.update_last_accessed()
+        file_info.update_last_accessed() #
         
         # Create temp file
         temp_file = tempfile.NamedTemporaryFile(delete=False)
-        temp_file.write(decrypted_data)
-        temp_file.close()
+        temp_file.write(decrypted_data) #
+        temp_file.close() #
 
-        # --- ADDED FOR PERFORMANCE CSV LOGGING --- # <<< ADDED
+        # --- ADDED FOR PERFORMANCE CSV LOGGING ---
         try:
             download_fieldnames = [
                 'timestamp', 'username', 'filename', 'file_size_bytes',
                 'sensitivity', 'decryption_time_ms', 'cpu_usage_percent', 
                 'memory_usage_mb'
-            ]
+            ] #
             download_metrics = {
                 'timestamp': datetime.now().isoformat(),
                 'username': current_user.username,
@@ -371,26 +428,26 @@ def download_file(file_id):
                 'decryption_time_ms': decryption_time,
                 'cpu_usage_percent': cpu_usage,
                 'memory_usage_mb': mem_end
-            }
-            write_metrics_to_csv(DOWNLOAD_PERFORMANCE_CSV, download_metrics, download_fieldnames)
+            } #
+            write_metrics_to_csv(DOWNLOAD_PERFORMANCE_CSV, download_metrics, download_fieldnames) #
         except Exception as e:
             print(f"Failed to log download performance: {e}")
-        # --- END PERFORMANCE LOGGING --- # <<< ADDED
+        # --- END PERFORMANCE LOGGING ---
         
         log_audit('FILE_DOWNLOAD', 
-                 details=f'File: {file_info.original_filename}, Time: {decryption_time:.1f}ms, CPU: {cpu_usage:.2f}%, Mem: {mem_end:.2f}MB') # <<< MODIFIED LOG FORMATTING
+                 details=f'File: {file_info.original_filename}, Time: {decryption_time:.1f}ms, CPU: {cpu_usage:.2f}%, Mem: {mem_end:.2f}MB') #
         
         return send_file(
             temp_file.name,
             as_attachment=True,
             download_name=file_info.original_filename
-        )
+        ) #
     
     except Exception as e:
         flash(f'❌ Decryption failed: {str(e)}', 'error')
         log_audit('FILE_DOWNLOAD', 
                  details=f'Error: {str(e)}', 
-                 success=False)
+                 success=False) #
         return redirect(url_for('index'))
 
 @app.route('/delete/<int:file_id>', methods=['POST'])

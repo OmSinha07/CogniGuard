@@ -11,8 +11,19 @@ import pyotp # Added for TOTP functionality
 
 db = SQLAlchemy()
 
+# Add this above the User class
+file_shares = db.Table('file_shares',
+    db.Column('user_id', db.Integer, db.ForeignKey('users.id'), primary_key=True),
+    db.Column('file_id', db.Integer, db.ForeignKey('encrypted_files.id'), primary_key=True),
+    db.Column('shared_at', db.DateTime, default=datetime.utcnow)
+)
+
+# Update the User class to include this relationship
 class User(UserMixin, db.Model):
-    """User model with authentication and profile data"""
+    # ... existing fields ...
+    shared_files = db.relationship('EncryptedFile', 
+                                  secondary=file_shares, 
+                                  backref=db.backref('shared_with', lazy='dynamic'))
     __tablename__ = 'users'
     
     id = db.Column(db.Integer, primary_key=True)
@@ -179,3 +190,11 @@ class AuditLog(db.Model):
     
     def __repr__(self):
         return f'<AuditLog {self.action} at {self.timestamp}>'
+    
+# Add this model at the end of the file
+class SharedKey(db.Model):
+    __tablename__ = 'shared_keys'
+    id = db.Column(db.Integer, primary_key=True)
+    file_id = db.Column(db.Integer, db.ForeignKey('encrypted_files.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    encrypted_key_for_user = db.Column(db.Text, nullable=False)
